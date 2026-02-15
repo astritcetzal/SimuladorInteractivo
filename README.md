@@ -41,7 +41,7 @@ Declaro que utilicé herramientas de Inteligencia Artificial de manera asistida.
 
 ## IA: Gemini 3
 
-##Proposito:
+## Proposito:
 Como no se mucho de java script darle las instrucciones a la IA me ha resultado más facil y eficiente. 
 
 ## Promt:
