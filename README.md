@@ -41,7 +41,8 @@ Declaro que utilicé herramientas de Inteligencia Artificial de manera asistida.
 
 ## IA: Gemini 3
 
-Proposito: Como no se mucho de java script darle las instrucciones a la IA me ha resultado más facil y eficiente. 
+##Proposito:
+Como no se mucho de java script darle las instrucciones a la IA me ha resultado más facil y eficiente. 
 
 ## Promt:
 Actua como un desarrollador de software profesional experto es java script y sistemas operativos. Necesito que crees un simulador interactivo web (en un solo archivo) para comparar dos algoritmos de gestión de memoria: best fit y worst fit.
@@ -703,6 +704,8 @@ HTML
 
 </body>
 </html>
+
+
 
 ''''
 
