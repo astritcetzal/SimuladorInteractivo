@@ -70,7 +70,7 @@ He diseñado este simulador utilizando Particionamiento Fijo (Fixed Partitioning
 
 Aquí tienes el código completo. Puedes copiarlo, guardarlo como .html y abrirlo en tu navegador.
 
-''''
+´´´´´´
 
 HTML
 <!DOCTYPE html>
@@ -389,9 +389,11 @@ HTML
         <h3>System Logs</h3>
         <div id="console-log"></div>
     </div>
+
 </div>
 
 <script>
+
     /* =========================================
        LÓGICA DEL SIMULADOR
        ========================================= */
@@ -706,8 +708,7 @@ HTML
 </html>
 
 
-
-''''
+´´´´
 
 Características Clave de la Solución:
 Arquitectura Visual (Best Fit vs Worst Fit):
