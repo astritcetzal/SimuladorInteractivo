@@ -4,229 +4,695 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulador de Gestión de Memoria: Best Fit vs Worst Fit</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap');
+        /* =========================================
+           CONFIGURACIÓN DE COLORES Y ESTILOS
+           ========================================= */
+        :root {
+            --bg-color: #dba2f5c9;
+            --card-bg: #aeece9;
+            --text-color: #333333;
+            --accent-color: #1d84b4; /* Azul principal */
+            --success-color: #10b981; /* Verde (Best Fit) */
+            --danger-color: #ef4444;  /* Rojo (Worst Fit / Fallos) */
+            --block-free: #9dddb8;    /* Gris claro */
+            --block-occupied: #3bf6d7; /* Azul proceso */
+            --border-radius: 8px;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-family);
+            background-image: linear-gradient(to left, #ace5fffb, #79a2fc);
+            color: var(--text-color);
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3 { margin-bottom: 15px; font-weight: 700; }
+        h1 { text-align: center; color: var(--accent-color); }
+
+        /* Contenedores */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        /* Inputs y Botones */
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .form-control {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label { font-size: 0.9em; font-weight: 600; margin-bottom: 5px; }
+
+        input, textarea {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1em;
+            font-family: inherit;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        button:hover { background-color: #14b2e2; }
+        button.secondary { background-color: #d31616; }
+        button:disabled { background-color: #cbd5e1; cursor: not-allowed; opacity: 0.7; }
+
+        /* Configuración de Bloques */
+        #blocks-config-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        /* Simulación Visual */
+        .simulation-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .simulation-grid { grid-template-columns: 1fr; }
+        }
+
+        .algo-column {
+            background: #fafafa;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            border: 1px solid #e5e7eb;
+        }
+
+        .algo-header {
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 10px;
+        }
+
+        /* Visualización de la Memoria */
+        .memory-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 200px;
+        }
+
+        .memory-block {
+            position: relative;
+            height: 50px; /* Altura fija para visualización limpia */
+            background-color: var(--block-free);
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            transition: all 0.5s ease;
+            overflow: hidden;
+        }
+
+        .memory-block.occupied {
+            background-color: #dbeafe; /* Fondo ligero para ocupado */
+            border-color: var(--block-occupied);
+        }
+
+        /* Barra de progreso interna (Proceso) */
+        .process-bar {
+            height: 80%;
+            background-color: var(--block-occupied);
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8em;
+            white-space: nowrap;
+            transition: width 0.5s ease;
+            width: 0%; /* Inicia en 0 para animación */
+        }
+
+        .block-info {
+            position: absolute;
+            right: 10px;
+            font-size: 0.8em;
+            color: #666;
+        }
+
+        /* Estadísticas */
+        .stats-panel {
+            margin-top: 15px;
+            font-size: 0.9em;
+            background: white;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .stat-val { font-weight: bold; }
+
+        /* Consola */
+        #console-log {
+            background: #1e293b;
+            color: #10b981;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 15px;
+            height: 150px;
+            overflow-y: auto;
+            border-radius: var(--border-radius);
+            font-size: 0.85em;
+        }
+        .log-entry { margin-bottom: 5px; border-bottom: 1px solid #334155; padding-bottom: 2px; }
+        .log-error { color: #ef4444; }
+        .log-bf { color: #60a5fa; } /* Azul claro */
+        .log-wf { color: #f472b6; } /* Rosa */
+
+        /* Ganador */
+        .winner-section {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+            border: 2px solid var(--accent-color);
+            margin-top: 20px;
+            display: none; /* Oculto al inicio */
+        }
+        .winner-badge {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        /* Nueva sección de Cola de Procesos */
+        .queue-container {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            margin-bottom: 15px;
+            min-height: 60px;
+            align-items: center;
+        }
+        .queue-item {
+            background: var(--text-color);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            white-space: nowrap;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        body { background-color: #0f172a; color: #e2e8f0; font-family: 'Inter', sans-serif; }
-        .memory-block { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); min-height: 60px; position: relative; border: 1px solid rgba(255,255,255,0.1); }
-        .occupied { background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); animation: pulse 0.5s ease-out; }
-        .free { background: #1e293b; }
-        .console { font-family: 'Fira Code', monospace; font-size: 0.8rem; height: 150px; overflow-y: auto; background: #020617; }
-        @keyframes pulse {
-            0% { transform: scale(0.98); opacity: 0.7; }
-            100% { transform: scale(1); opacity: 1; }
+        /* Utilidades */
+        .hidden { display: none !important; }
+        
+        footer {
+            background-color: rgb(174, 218, 230);
+            color: rgb(0, 0, 0); 
+            padding: 20px; 
+            width: 100%; 
+            box-sizing: border-box;
+            text-align: center;
+            margin-top: 50px; 
+            border-radius: 20px; 
         }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body>
 
-    <header class="mb-8 text-center">
-        <h1 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
-            Memory Allocation Simulator
-        </h1>
-        <p class="text-slate-400">Comparativa Técnica: Best Fit vs Worst Fit</p>
-    </header>
+<div class="container">
+    <h1>Simulador de Memoria: Best Fit vs Worst Fit</h1>
 
-    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <div id="step-1" class="card">
+        <h3>1. Configuración de Memoria</h3>
+        <p>Define el tamaño total de la memoria y en cuántos bloques (particiones) quieres dividirla.</p>
+        <div class="input-group">
+            <div class="form-control">
+                <label>Tamaño Total Memoria (KB)</label>
+                <input type="number" id="total-mem" value="1000" min="100">
+            </div>
+            <div class="form-control">
+                <label>Cantidad de Bloques</label>
+                <input type="number" id="num-blocks" value="5" min="1" max="20">
+            </div>
+            <button onclick="generateBlockInputs()">Generar Bloques</button>
+        </div>
         
-        <div class="lg:col-span-1 bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
-            <h2 class="text-xl font-semibold mb-4 border-b border-slate-700 pb-2">Configuración</h2>
-            
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm mb-1">Estructura Inicial (ej: 100, 500, 200, 300)</label>
-                    <input id="memConfig" type="text" value="100, 500, 200, 300, 600" class="w-full bg-slate-900 border border-slate-600 p-2 rounded text-blue-300">
-                </div>
-                <button onclick="initSim()" class="w-full bg-blue-600 hover:bg-blue-500 py-2 rounded font-bold transition">Reiniciar Memoria</button>
-                
-                <hr class="border-slate-700">
-                
-                <div>
-                    <label class="block text-sm mb-1">Nombre Proceso</label>
-                    <input id="procId" type="text" placeholder="P1" class="w-full bg-slate-900 border border-slate-600 p-2 rounded">
-                </div>
-                <div>
-                    <label class="block text-sm mb-1">Tamaño (KB)</label>
-                    <input id="procSize" type="number" placeholder="250" class="w-full bg-slate-900 border border-slate-600 p-2 rounded">
-                </div>
-                <button onclick="addProcess()" class="w-full bg-purple-600 hover:bg-purple-500 py-2 rounded font-bold transition">Asignar Proceso</button>
-            </div>
-
-            <div class="mt-6">
-                <h3 class="text-sm font-bold text-slate-500 uppercase">Consola de Eventos</h3>
-                <div id="log" class="console mt-2 p-2 border border-slate-700 rounded"></div>
-            </div>
-        </div>
-
-        <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold text-green-400 underline decoration-2 underline-offset-4">BEST FIT</h2>
-                    <span id="bf-status" class="text-xs px-2 py-1 rounded bg-slate-900">Activo</span>
-                </div>
-                <div id="bf-container" class="space-y-2 mb-4"></div>
-                <div class="grid grid-cols-2 gap-2 text-xs" id="bf-stats">
-                    </div>
-            </div>
-
-            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold text-orange-400 underline decoration-2 underline-offset-4">WORST FIT</h2>
-                    <span id="wf-status" class="text-xs px-2 py-1 rounded bg-slate-900">Activo</span>
-                </div>
-                <div id="wf-container" class="space-y-2 mb-4"></div>
-                <div class="grid grid-cols-2 gap-2 text-xs" id="wf-stats">
-                    </div>
-            </div>
-
-        </div>
-
-        <div class="lg:col-span-4 bg-slate-900 border-2 border-dashed border-slate-700 p-6 rounded-xl">
-            <h2 class="text-xl font-bold mb-4 text-center">🏆 Análisis de Eficiencia</h2>
-            <div id="winner-report" class="flex flex-col md:flex-row justify-around items-center text-center gap-4">
-                <p class="text-slate-400 italic text-sm">Agrega procesos para ver quién gestiona mejor los recursos...</p>
+        <div id="blocks-config-wrapper" class="hidden">
+            <h4>Define el tamaño de cada bloque:</h4>
+            <p style="font-size: 0.8em; color: #666;">La suma no debe superar el total. Si sobra espacio, se marcará como "Sistema".</p>
+            <div id="blocks-config-container"></div>
+            <div style="margin-top: 15px;">
+                <span id="current-sum-display">Suma actual: 0 KB</span>
+                <button onclick="initializeSimulation()" style="margin-left: 20px;">Iniciar Simulación</button>
             </div>
         </div>
     </div>
 
-    <script>
-        let bestFitMem = [];
-        let worstFitMem = [];
-        let stats = {
-            bf: { failures: 0, totalRequested: 0 },
-            wf: { failures: 0, totalRequested: 0 }
-        };
+    <div id="step-2" class="card hidden">
+        <div class="input-group" style="justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px;">
+            <h3>Panel de Control</h3>
+            <button class="secondary" onclick="resetSimulation()">Reiniciar Todo</button>
+        </div>
 
-        function initSim() {
-            const config = document.getElementById('memConfig').value.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
-            bestFitMem = config.map((size, idx) => ({ id: idx, size, originalSize: size, process: null }));
-            worstFitMem = config.map((size, idx) => ({ id: idx, size, originalSize: size, process: null }));
-            stats = { bf: { failures: 0 }, wf: { failures: 0 } };
+        <div class="input-group" id="input-area">
+            <div class="form-control" style="flex: 1;">
+                <label>Cola de Procesos (Ingresa los tamaños separados por coma)</label>
+                <textarea id="queue-input-raw" rows="2" placeholder="Ejemplo: 100, 200, 50, 300, 120"></textarea>
+            </div>
+            <button onclick="loadQueue()">Cargar Cola</button>
+        </div>
+
+        <div id="execution-controls" class="hidden">
+            <label>Cola de Espera:</label>
+            <div id="queue-display" class="queue-container"></div>
             
-            log("Sistema Reiniciado: Memoria configurada.");
-            updateUI();
-        }
+            <div style="text-align: center; margin-bottom: 20px;">
+                <button id="btn-next" onclick="nextStep()" style="font-size: 1.2rem; padding: 15px 40px;">
+                    ▶ Siguiente Proceso
+                </button>
+            </div>
+        </div>
 
-        function log(msg) {
-            const l = document.getElementById('log');
-            l.innerHTML += `> ${msg}<br>`;
-            l.scrollTop = l.scrollHeight;
-        }
-
-        function addProcess() {
-            const id = document.getElementById('procId').value || `P${Math.floor(Math.random()*100)}`;
-            const size = parseInt(document.getElementById('procSize').value);
-
-            if (isNaN(size) || size <= 0) return alert("Ingresa un tamaño válido");
-
-            log(`Intentando asignar ${id} (${size}KB)...`);
-
-            // Lógica Best Fit: El bloque más pequeño que quepa
-            let bfTarget = bestFitMem
-                .filter(b => !b.process && b.size >= size)
-                .sort((a, b) => a.size - b.size)[0];
-
-            if (bfTarget) {
-                bfTarget.process = { id, size };
-                log(`BF: Asignado a bloque de ${bfTarget.size}KB`);
-            } else {
-                stats.bf.failures++;
-                log(`<span class="text-red-400">BF: Error - No hay espacio suficiente</span>`);
-            }
-
-            // Lógica Worst Fit: El bloque más grande disponible
-            let wfTarget = worstFitMem
-                .filter(b => !b.process && b.size >= size)
-                .sort((a, b) => b.size - a.size)[0];
-
-            if (wfTarget) {
-                wfTarget.process = { id, size };
-                log(`WF: Asignado a bloque de ${wfTarget.size}KB`);
-            } else {
-                stats.wf.failures++;
-                log(`<span class="text-red-400">WF: Error - No hay espacio suficiente</span>`);
-            }
-
-            updateUI();
-        }
-
-        function calculateMetrics(memoryArray, failCount) {
-            const totalSize = memoryArray.reduce((acc, b) => acc + b.originalSize, 0);
-            const occupiedSize = memoryArray.reduce((acc, b) => acc + (b.process ? b.process.size : 0), 0);
-            const freeBlocks = memoryArray.filter(b => !b.process);
-            const maxFree = freeBlocks.length > 0 ? Math.max(...freeBlocks.map(b => b.size)) : 0;
-            const utilization = (occupiedSize / totalSize * 100).toFixed(1);
-            
-            // Fragmentación Externa: Espacio libre total que no se puede usar por estar dividido
-            const externalFrag = memoryArray.filter(b => !b.process).reduce((acc, b) => acc + b.size, 0);
-
-            return { utilization, externalFrag, maxFree, failCount };
-        }
-
-        function renderMemory(containerId, memoryArray) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = '';
-            memoryArray.forEach(block => {
-                const div = document.createElement('div');
-                div.className = `memory-block rounded p-2 text-xs flex flex-col justify-center items-center ${block.process ? 'occupied' : 'free'}`;
-                div.style.height = `${Math.max(60, block.originalSize / 5)}px`;
+        <div class="simulation-grid">
+            <div class="algo-column">
+                <div class="algo-header">
+                    <h2 style="color: var(--success-color)">Best Fit</h2>
+                    <p>Busca el bloque más pequeño que sea suficiente.</p>
+                </div>
+                <div id="bf-container" class="memory-container"></div>
                 
-                if (block.process) {
-                    div.innerHTML = `
-                        <span class="font-bold">${block.process.id}</span>
-                        <span>${block.process.size} KB</span>
-                        <span class="text-[10px] opacity-70">Frag. Int: ${block.size - block.process.size}KB</span>
-                    `;
-                } else {
-                    div.innerHTML = `<span class="text-slate-500">LIBRE: ${block.size} KB</span>`;
-                }
-                container.appendChild(div);
+                <div class="stats-panel">
+                    <div class="stat-row"><span>Utilización:</span> <span id="bf-util" class="stat-val">0%</span></div>
+                    <div class="stat-row"><span>Frag. Externa (Libre):</span> <span id="bf-frag" class="stat-val">0 KB</span></div>
+                    <div class="stat-row"><span>Bloque Libre Máx:</span> <span id="bf-max-free" class="stat-val">0 KB</span></div>
+                    <div class="stat-row"><span>Fallas de Asignación:</span> <span id="bf-fails" class="stat-val" style="color:red">0</span></div>
+                </div>
+            </div>
+
+            <div class="algo-column">
+                <div class="algo-header">
+                    <h2 style="color: var(--danger-color)">Worst Fit</h2>
+                    <p>Busca el bloque más grande disponible.</p>
+                </div>
+                <div id="wf-container" class="memory-container"></div>
+
+                <div class="stats-panel">
+                    <div class="stat-row"><span>Utilización:</span> <span id="wf-util" class="stat-val">0%</span></div>
+                    <div class="stat-row"><span>Frag. Externa (Libre):</span> <span id="wf-frag" class="stat-val">0 KB</span></div>
+                    <div class="stat-row"><span>Bloque Libre Máx:</span> <span id="wf-max-free" class="stat-val">0 KB</span></div>
+                    <div class="stat-row"><span>Fallas de Asignación:</span> <span id="wf-fails" class="stat-val" style="color:red">0</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="winner-section" class="winner-section">
+            <h3>🏆 Comparativa Final</h3>
+            <p id="winner-text" class="winner-badge"></p>
+            <p id="winner-reason" style="margin-top: 10px;"></p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>System Logs</h3>
+        <div id="console-log"></div>
+    </div>
+</div>
+
+<script>
+    /* =========================================
+       LÓGICA DEL SIMULADOR
+       ========================================= */
+
+    // Estado global
+    let memoryTotal = 0;
+    let initialBlocksConfig = []; 
+    
+    // Estado de las simulaciones
+    let bfState = { blocks: [], fails: 0 };
+    let wfState = { blocks: [], fails: 0 };
+    
+    // Nueva lógica de Cola
+    let processQueue = []; // Array de objetos {id, size}
+    let processCounter = 1;
+
+    // Utilidad: Logger
+    function log(msg, type = 'info') {
+        const consoleDiv = document.getElementById('console-log');
+        const entry = document.createElement('div');
+        entry.classList.add('log-entry');
+        
+        const timestamp = new Date().toLocaleTimeString();
+        let prefix = `[${timestamp}] `;
+        
+        if (type === 'error') {
+            entry.classList.add('log-error');
+            prefix += '❌ ';
+        } else if (type === 'bf') {
+            entry.classList.add('log-bf');
+            prefix += '🟢 [BestFit] ';
+        } else if (type === 'wf') {
+            entry.classList.add('log-wf');
+            prefix += '🔴 [WorstFit] ';
+        } else {
+            prefix += 'ℹ️ ';
+        }
+
+        entry.innerText = prefix + msg;
+        consoleDiv.prepend(entry);
+    }
+
+    // PASO 1: Generar inputs para bloques
+    function generateBlockInputs() {
+        memoryTotal = parseInt(document.getElementById('total-mem').value);
+        const count = parseInt(document.getElementById('num-blocks').value);
+        const container = document.getElementById('blocks-config-container');
+        
+        if (!memoryTotal || !count) return alert("Por favor ingresa valores válidos.");
+        
+        container.innerHTML = '';
+        const suggestedSize = Math.floor(memoryTotal / count);
+
+        for (let i = 0; i < count; i++) {
+            const div = document.createElement('div');
+            div.className = 'form-control';
+            const randomVar = Math.floor(Math.random() * 20) - 10; 
+            div.innerHTML = `
+                <label>Bloque ${i + 1} (KB)</label>
+                <input type="number" class="block-input" data-index="${i}" value="${suggestedSize + randomVar}" onchange="updateSum()">
+            `;
+            container.appendChild(div);
+        }
+
+        document.getElementById('blocks-config-wrapper').classList.remove('hidden');
+        updateSum();
+    }
+
+    function updateSum() {
+        const inputs = document.querySelectorAll('.block-input');
+        let sum = 0;
+        inputs.forEach(inp => sum += parseInt(inp.value || 0));
+        const display = document.getElementById('current-sum-display');
+        display.innerText = `Suma actual: ${sum} KB / Total: ${memoryTotal} KB`;
+        
+        if(sum > memoryTotal) display.style.color = 'red';
+        else display.style.color = 'green';
+    }
+
+    // PASO 2: Inicializar
+    function initializeSimulation() {
+        const inputs = document.querySelectorAll('.block-input');
+        let sum = 0;
+        initialBlocksConfig = [];
+
+        // Validar y construir configuración
+        for (let i = 0; i < inputs.length; i++) {
+            const size = parseInt(inputs[i].value);
+            if (size <= 0) return alert("Los tamaños de bloque deben ser positivos.");
+            sum += size;
+            initialBlocksConfig.push({
+                id: i,
+                size: size,
+                occupied: false,
+                processId: null,
+                processSize: 0
             });
         }
 
-        function updateUI() {
-            renderMemory('bf-container', bestFitMem);
-            renderMemory('wf-container', worstFitMem);
+        if (sum > memoryTotal) return alert(`La suma de bloques (${sum}) excede la memoria total (${memoryTotal}).`);
 
-            const mBf = calculateMetrics(bestFitMem, stats.bf.failures);
-            const mWf = calculateMetrics(worstFitMem, stats.wf.failures);
+        // Copia profunda para estados independientes
+        bfState.blocks = JSON.parse(JSON.stringify(initialBlocksConfig));
+        wfState.blocks = JSON.parse(JSON.stringify(initialBlocksConfig));
+        bfState.fails = 0;
+        wfState.fails = 0;
+        
+        // UI Switch
+        document.getElementById('step-1').classList.add('hidden');
+        document.getElementById('step-2').classList.remove('hidden');
+        
+        log("Simulación inicializada.");
+        renderAll();
+    }
 
-            document.getElementById('bf-stats').innerHTML = renderStatsHtml(mBf);
-            document.getElementById('wf-stats').innerHTML = renderStatsHtml(mWf);
+    function resetSimulation() {
+        location.reload();
+    }
 
-            updateWinner(mBf, mWf);
+    // ============================================
+    // NUEVA LÓGICA: GESTIÓN DE COLA
+    // ============================================
+
+    function loadQueue() {
+        const rawInput = document.getElementById('queue-input-raw').value;
+        if (!rawInput.trim()) return alert("Ingresa al menos un valor.");
+
+        const parts = rawInput.split(/[ ,]+/); // Separar por comas o espacios
+        processQueue = [];
+        let tempCounter = processCounter;
+
+        parts.forEach(part => {
+            const size = parseInt(part);
+            if (!isNaN(size) && size > 0) {
+                processQueue.push({
+                    id: `P${tempCounter++}`,
+                    size: size
+                });
+            }
+        });
+
+        if (processQueue.length === 0) return alert("No se encontraron números válidos.");
+
+        // Mostrar controles de ejecución
+        document.getElementById('input-area').classList.add('hidden');
+        document.getElementById('execution-controls').classList.remove('hidden');
+        
+        processCounter = tempCounter; // Actualizar contador global
+        renderQueueVisuals();
+        log(`Cola cargada con ${processQueue.length} procesos.`);
+    }
+
+    function renderQueueVisuals() {
+        const container = document.getElementById('queue-display');
+        container.innerHTML = '';
+        if (processQueue.length === 0) {
+            container.innerHTML = '<span style="color:#666; width:100%; text-align:center;">Cola vacía.</span>';
+            document.getElementById('btn-next').disabled = true;
+            document.getElementById('btn-next').innerText = "Fin de la Simulación";
+            checkWinner(); // Verificar ganador al final
+            return;
         }
 
-        function renderStatsHtml(m) {
-            return `
-                <div class="bg-slate-900 p-2 rounded">Utilización: <b class="text-blue-400">${m.utilization}%</b></div>
-                <div class="bg-slate-900 p-2 rounded">Frag. Ext: <b class="text-orange-400">${m.externalFrag}KB</b></div>
-                <div class="bg-slate-900 p-2 rounded">Máx Libre: <b class="text-green-400">${m.maxFree}KB</b></div>
-                <div class="bg-slate-900 p-2 rounded text-red-400">Fallas: <b>${m.failCount}</b></div>
-            `;
+        processQueue.forEach(p => {
+            const el = document.createElement('div');
+            el.className = 'queue-item';
+            el.innerText = `${p.id}: ${p.size}KB`;
+            container.appendChild(el);
+        });
+    }
+
+    function nextStep() {
+        if (processQueue.length === 0) return;
+
+        const currentProcess = processQueue.shift(); // Sacar el primero
+        
+        log(`--- PROCESANDO ${currentProcess.id} (${currentProcess.size} KB) ---`);
+        
+        runBestFit(currentProcess.id, currentProcess.size);
+        runWorstFit(currentProcess.id, currentProcess.size);
+        
+        renderAll();
+        renderQueueVisuals(); // Actualizar cola visual
+    }
+
+    // ============================================
+    // LÓGICA ALGORITMOS (Sin cambios mayores)
+    // ============================================
+
+    function runBestFit(id, size) {
+        let bestIndex = -1;
+        let minFragmentation = Infinity;
+
+        for (let i = 0; i < bfState.blocks.length; i++) {
+            const block = bfState.blocks[i];
+            if (!block.occupied && block.size >= size) {
+                const diff = block.size - size;
+                if (diff < minFragmentation) {
+                    minFragmentation = diff;
+                    bestIndex = i;
+                }
+            }
         }
 
-        function updateWinner(bf, wf) {
-            const report = document.getElementById('winner-report');
-            let winnerText = "";
+        if (bestIndex !== -1) {
+            bfState.blocks[bestIndex].occupied = true;
+            bfState.blocks[bestIndex].processId = id;
+            bfState.blocks[bestIndex].processSize = size;
+            log(`Asignado ${id} en Bloque ${bestIndex + 1} (F.Int: ${minFragmentation} KB)`, 'bf');
+        } else {
+            bfState.fails++;
+            log(`Fallo al asignar ${id}.`, 'bf');
+        }
+    }
+
+    function runWorstFit(id, size) {
+        let worstIndex = -1;
+        let maxFragmentation = -1;
+
+        for (let i = 0; i < wfState.blocks.length; i++) {
+            const block = wfState.blocks[i];
+            if (!block.occupied && block.size >= size) {
+                const diff = block.size - size;
+                if (diff > maxFragmentation) {
+                    maxFragmentation = diff;
+                    worstIndex = i;
+                }
+            }
+        }
+
+        if (worstIndex !== -1) {
+            wfState.blocks[worstIndex].occupied = true;
+            wfState.blocks[worstIndex].processId = id;
+            wfState.blocks[worstIndex].processSize = size;
+            log(`Asignado ${id} en Bloque ${worstIndex + 1} (F.Int: ${maxFragmentation} KB)`, 'wf');
+        } else {
+            wfState.fails++;
+            log(`Fallo al asignar ${id}.`, 'wf');
+        }
+    }
+
+    /* =========================================
+       RENDERIZADO Y MÉTRICAS
+       ========================================= */
+
+    function renderAll() {
+        renderContainer('bf-container', bfState.blocks);
+        renderContainer('wf-container', wfState.blocks);
+        
+        updateStats(bfState, 'bf');
+        updateStats(wfState, 'wf');
+    }
+
+    function renderContainer(containerId, blocks) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+
+        blocks.forEach((block, index) => {
+            const div = document.createElement('div');
+            div.className = `memory-block ${block.occupied ? 'occupied' : ''}`;
             
-            if (bf.failCount < wf.failCount) {
-                winnerText = "<span class='text-green-400'>Best Fit es más eficiente</span>: Ha rechazado menos procesos.";
-            } else if (wf.failCount < bf.failCount) {
-                winnerText = "<span class='text-orange-400'>Worst Fit es más eficiente</span>: Ha mantenido bloques mejor distribuidos para este caso.";
-            } else {
-                winnerText = bf.utilization > wf.utilization ? 
-                    "Best Fit tiene mejor aprovechamiento de memoria." : 
-                    "Empate técnico en fallas, pero Worst Fit deja bloques más grandes.";
+            let barWidth = 0;
+            let internalFrag = 0;
+            
+            if (block.occupied) {
+                const pct = (block.processSize / block.size) * 100;
+                barWidth = pct;
+                internalFrag = block.size - block.processSize;
             }
 
-            report.innerHTML = `<div class="text-lg">${winnerText}</div>`;
-        }
+            const content = block.occupied 
+                ? `<div class="process-bar" style="width: ${barWidth}%">${block.processId} (${block.processSize}KB)</div>` 
+                : `<span style="color: #999; font-style: italic; font-size: 0.8em;">Libre</span>`;
 
-        // Init al cargar
-        initSim();
-    </script>
+            div.innerHTML = `
+                ${content}
+                <div class="block-info">
+                    <strong>B${index+1}</strong>: ${block.size}KB
+                    ${block.occupied ? `<br><small style="color:red">F.Int: ${internalFrag}KB</small>` : ''}
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function updateStats(state, prefix) {
+        let totalUsedByProcess = 0;
+        let totalFree = 0; 
+        let maxFree = 0;
+
+        state.blocks.forEach(b => {
+            if (b.occupied) {
+                totalUsedByProcess += b.processSize;
+            } else {
+                totalFree += b.size;
+                if (b.size > maxFree) maxFree = b.size;
+            }
+        });
+
+        const utilization = ((totalUsedByProcess / memoryTotal) * 100).toFixed(1);
+
+        document.getElementById(`${prefix}-util`).innerText = `${utilization}%`;
+        document.getElementById(`${prefix}-frag`).innerText = `${totalFree} KB`;
+        document.getElementById(`${prefix}-max-free`).innerText = `${maxFree} KB`;
+        document.getElementById(`${prefix}-fails`).innerText = state.fails;
+    }
+
+    function checkWinner() {
+        const div = document.getElementById('winner-section');
+        const badge = document.getElementById('winner-text');
+        const reason = document.getElementById('winner-reason');
+        
+        div.style.display = 'block';
+
+        if (bfState.fails < wfState.fails) {
+            badge.innerText = "Ganador: BEST FIT";
+            reason.innerText = `Best Fit ha tenido menos fallos de asignación (${bfState.fails} vs ${wfState.fails}).`;
+            div.style.borderColor = "var(--success-color)";
+        } else if (wfState.fails < bfState.fails) {
+            badge.innerText = "Ganador: WORST FIT";
+            reason.innerText = `Worst Fit ha tenido menos fallos (${wfState.fails} vs ${bfState.fails}).`;
+            div.style.borderColor = "var(--danger-color)";
+        } else {
+            const bfUtil = parseFloat(document.getElementById('bf-util').innerText);
+            const wfUtil = parseFloat(document.getElementById('wf-util').innerText);
+
+            if (bfUtil > wfUtil) {
+                badge.innerText = "Ganador Técnico: BEST FIT";
+                reason.innerText = "Empate en fallos, pero Best Fit usó mejor la memoria.";
+            } else if (wfUtil > bfUtil) {
+                badge.innerText = "Ganador Técnico: WORST FIT";
+                reason.innerText = "Empate en fallos, pero Worst Fit usó mejor la memoria.";
+            } else {
+                badge.innerText = "EMPATE";
+                reason.innerText = "Resultados idénticos.";
+                div.style.borderColor = "#999";
+            }
+        }
+    }
+</script>
+    <footer>
+        Astrit Airan Cetzal Cetzal - Sistemas Operativos - 14/02/2026 - Profesor: Jorge Javier Pedrozo Romero - Tecnológico de Software
+    </footer>
 </body>
 </html>
