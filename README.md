@@ -70,9 +70,9 @@ He diseñado este simulador utilizando Particionamiento Fijo (Fixed Partitioning
 
 Aquí tienes el código completo. Puedes copiarlo, guardarlo como .html y abrirlo en tu navegador.
 
-´´´´´´
 
-HTML
+````
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -389,11 +389,9 @@ HTML
         <h3>System Logs</h3>
         <div id="console-log"></div>
     </div>
-
 </div>
 
 <script>
-
     /* =========================================
        LÓGICA DEL SIMULADOR
        ========================================= */
@@ -708,7 +706,10 @@ HTML
 </html>
 
 
-´´´´
+````
+
+
+
 
 Características Clave de la Solución:
 Arquitectura Visual (Best Fit vs Worst Fit):
@@ -763,7 +764,8 @@ no podrias hacer que el usuario ingrese los valores que quiera y que luego cuand
 
 modifica el siguiente código:
 
-'''' 
+
+````
 
 <!DOCTYPE html>
 <html lang="es">
@@ -1410,7 +1412,13 @@ modifica el siguiente código:
 </body>
 </html>
 
-quiero qie mi codigo haga lo kmismo que este  poque en este aumentan los bloques po la fragmentación 
+
+````
+
+quiero qie mi codigo haga lo kmismo que este  poque en este aumentan los bloques po la fragmentación `
+
+
+````
 
 <!DOCTYPE html>
 <html lang="es">
@@ -2356,7 +2364,7 @@ quiero qie mi codigo haga lo kmismo que este  poque en este aumentan los bloques
 </body>
 </html>
 
-''''
+````
 
 ## Archivos adjentos: N/A
 
@@ -2372,7 +2380,9 @@ Lógica de Ejecución (Código 2 - Particionamiento Dinámico): Ahora, cuando un
 
 Aquí tienes el código completo en un solo archivo:
 
-''''
+
+`````
+
 
 <!DOCTYPE html>
 <html lang="es">
@@ -3045,4 +3055,4 @@ Aquí tienes el código completo en un solo archivo:
 </html>
 
 
-''''
+````
